@@ -6,4 +6,13 @@ module.exports = app => {
     app.route('/users/:id')
         .get(app.api.user.show)
         .put(app.api.user.update);
+
+    app.route('/categories')
+        .get(app.api.category.index)
+        .post(app.api.category.store);
+
+    app.route('/categories/:id')
+        .get(app.api.category.show)
+        .put(app.api.category.update)
+        .delete(app.api.category.destroy);
 };
