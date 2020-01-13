@@ -105,5 +105,24 @@ module.exports = app => {
         }
     };
 
-    return { index, show, store, update, destroy };
+    const toTree = (categories, tree = categories.filter(c => !c.parentId)) => {
+        tree = tree.map(parentNode => {
+            const isChild = node => node.parentId == parentNode.id;
+            parentNode.children = toTree(categories, categories.filter(isChild));
+            return parentNode;
+        });
+
+        return tree;
+    };
+
+    const getTree = async (_request, response) => {
+        try {
+            const categories = await app.db('categories');
+            response.json(toTree(withPath(categories)));
+        } catch(error) {
+            response.status(500).send(error);
+        }
+    };
+
+    return { index, show, store, update, destroy, getTree };
 };
