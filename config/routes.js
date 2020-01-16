@@ -18,4 +18,13 @@ module.exports = app => {
         .get(app.api.category.show)
         .put(app.api.category.update)
         .delete(app.api.category.destroy);
+
+    app.route('/articles')
+        .get(app.api.article.index)
+        .post(app.api.article.store);
+
+    app.route('/articles/:id')
+        .get(app.api.article.show)
+        .put(app.api.article.update)
+        .delete(app.api.article.destroy);
 };
