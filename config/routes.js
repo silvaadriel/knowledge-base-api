@@ -27,4 +27,7 @@ module.exports = app => {
         .get(app.api.article.show)
         .put(app.api.article.update)
         .delete(app.api.article.destroy);
+
+    app.route('/categories/:id/articles')
+        .get(app.api.article.showByCategory);
 };

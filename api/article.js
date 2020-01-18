@@ -1,12 +1,14 @@
+const queries = require('./queries');
+
 module.exports = app => {
     const { existsOrError } = app.api.validation;
 
     const limit = 10;
     const index = async (request, response) => {
-        const page = request.query.page || 1
+        const page = request.query.page || 1;
 
-        const result = await app.db('articles').count('id').first()
-        const count = parseInt(result.count)
+        const result = await app.db('articles').count('id').first();
+        const count = parseInt(result.count);
 
         try {
             const articles = await app.db('articles')
@@ -25,6 +27,26 @@ module.exports = app => {
             const article = await app.db('articles').where({ id }).first();
             article.content = article.content.toString();
             response.json(article);
+        } catch(error) {
+            response.status(500).send(error);
+        }
+    };
+
+    const showByCategory = async (request, response) => {
+        const categoryId = request.params.id;
+        const page = request.query.page || 1;
+        const categories = await app.db.raw(queries.categoryWithChildren, categoryId);
+        const ids = categories.rows.map(c => c.id);
+
+        try {
+            const articles = await app.db({a: 'articles', u: 'users'})
+                .select('a.id', 'a.name', 'a.description', 'a.imageUrl', { author: 'u.name' })
+                .limit(limit).offset(page * limit - limit)
+                .whereRaw('?? = ??', ['u.id', 'a.userId'])
+                .whereIn('categoryId', ids)
+                .orderBy('a.id', 'desc');
+
+            response.json(articles);
         } catch(error) {
             response.status(500).send(error);
         }
@@ -62,7 +84,7 @@ module.exports = app => {
             existsOrError(article.userId, 'Author not entered');
             existsOrError(article.content, 'Content not entered');
         } catch(message) {
-            response.status(400).send(message);
+            return response.status(400).send(message);
         }
 
         try {
@@ -78,7 +100,7 @@ module.exports = app => {
 
         try {
             const rowsDeleted = await app.db('articles')
-                .where({ id }).del()
+                .where({ id }).del();
             
             try {
                 existsOrError(rowsDeleted, 'Article not entered');
@@ -92,5 +114,5 @@ module.exports = app => {
         }
     };
 
-    return { index, show, store, update, destroy };
+    return { index, show, showByCategory, store, update, destroy };
 };
