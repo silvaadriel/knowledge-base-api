@@ -1,4 +1,8 @@
 module.exports = app => {
+    app.post('/signup', app.api.user.store);
+    app.post('/signin', app.api.auth.signin);
+    app.post('/validateToken', app.api.auth.validateToken);
+
     app.route('/users')
         .get(app.api.user.index)
         .post(app.api.user.store);
