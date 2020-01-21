@@ -19,7 +19,8 @@ module.exports = app => {
     const index = async (_request, response) => {
         try {
             const users = await app.db('users')
-                .select('id', 'name', 'email', 'admin');
+                .select('id', 'name', 'email', 'admin')
+                .whereNull('deletedAt');
             response.json(users);
         } catch(error) {
             response.status(500).send(error);
@@ -31,7 +32,10 @@ module.exports = app => {
 
         try {
             const user = await app.db('users')
-                .select('id', 'name', 'email', 'admin').where({ id }).first();
+                .select('id', 'name', 'email', 'admin')
+                .where({ id })
+                .whereNull('deletedAt')
+                .first();
             response.json(user);
         } catch(error) {
             response.status(500).send(error);
@@ -77,12 +81,34 @@ module.exports = app => {
         delete user.confirmPassword;
 
         try {
-            await app.db('users').update(user).where({ id: user.id });
+            await app.db('users')
+                .update(user)
+                .where({ id: user.id })
+                .whereNull('deletedAt');
             response.status(204).send();
         } catch(error) {
             response.status(500).send(error);
         }
     }
 
-    return { index, show, store, update };
+    const softDestroy = async (request, response) => {
+        const { id } = request.params;
+
+        try {
+            const articles = await app.db('articles')
+                .where({ userId: id })
+                .first();
+            notExistsOrError(articles, 'User has articles');
+
+            const rowsUpdate = await app.db('users')
+                .update({ deletedAt: new Date() })
+                .where({ id });
+            existsOrError(rowsUpdate, 'User not found');
+            response.status(204).send();
+        } catch(message) {
+            response.status(400).send(message);
+        }
+    };
+
+    return { index, show, store, update, softDestroy };
 };
