@@ -45,6 +45,9 @@ module.exports = app => {
     const store = async (request, response) => {
         const user = { ...request.body };
 
+        if(!request.originalUrl.startsWith('/users')) user.admin = false;
+        if(!request.user || !request.user.admin) user.admin = false;
+
         try {
             validateUserFields(user);
             
@@ -70,6 +73,9 @@ module.exports = app => {
     const update = async (request, response) => {
         const user = { ...request.body };
         user.id = request.params.id;
+
+        if(!request.originalUrl.startsWith('/users')) user.admin = false;
+        if(!request.user || !request.user.admin) user.admin = false;
 
         try {
             validateUserFields(user);
