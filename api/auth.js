@@ -19,6 +19,7 @@ module.exports = app => {
         try {
             const user = await app.db('users')
                 .where({ email })
+                .whereNull('deletedAt')
                 .first();
 
             if (!user) return response.status(400).send('User not found');
