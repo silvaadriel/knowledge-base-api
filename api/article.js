@@ -3,9 +3,9 @@ const queries = require('./queries');
 module.exports = app => {
     const { existsOrError } = app.api.validation;
 
-    const limit = 10;
     const index = async (request, response) => {
         const page = request.query.page || 1;
+        const limit = request.query.limit || 10;
 
         const result = await app.db('articles').count('id').first();
         const count = parseInt(result.count);
@@ -35,12 +35,20 @@ module.exports = app => {
     const showByCategory = async (request, response) => {
         const categoryId = request.params.id;
         const page = request.query.page || 1;
-        const categories = await app.db.raw(queries.categoryWithChildren, categoryId);
+        const limit = request.query.limit || 10;
+        const categories = await app.db
+            .raw(queries.categoryWithChildren, categoryId);
         const ids = categories.rows.map(c => c.id);
 
         try {
             const articles = await app.db({a: 'articles', u: 'users'})
-                .select('a.id', 'a.name', 'a.description', 'a.imageUrl', { author: 'u.name' })
+                .select(
+                    'a.id',
+                    'a.name',
+                    'a.description',
+                    'a.imageUrl',
+                    { author: 'u.name' },
+                )
                 .limit(limit).offset(page * limit - limit)
                 .whereRaw('?? = ??', ['u.id', 'a.userId'])
                 .whereIn('categoryId', ids)
@@ -53,7 +61,15 @@ module.exports = app => {
     };
 
     const store = async (request, response) => {
-        const article = { ...request.body };
+        const article = {
+            id : request.body.id,
+            name : request.body.name,
+            description : request.body.description,
+            imageUrl : request.body.imageUrl,
+            content : request.body.content,
+            userId : request.body.userId,
+            categoryId : request.body.categoryId,
+        };
 
         try {
             existsOrError(article.name, 'Name not entered');
@@ -75,7 +91,15 @@ module.exports = app => {
 
     const update = async (request, response) => {
         const { id } = request.params;
-        const article = { ...request.body };
+        const article = {
+            id : request.body.id,
+            name : request.body.name,
+            description : request.body.description,
+            imageUrl : request.body.imageUrl,
+            content : request.body.content,
+            userId : request.body.userId,
+            categoryId : request.body.categoryId,
+        };
 
         try {
             existsOrError(article.name, 'Name not entered');
