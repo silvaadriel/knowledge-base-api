@@ -28,10 +28,20 @@ module.exports = app => {
         return categoriesWithPath;
     };
 
-    const index = async (_request, response) => {
+    const index = async (request, response) => {
+        const page = request.query.page || 1;
+        const limit = request.query.limit || 10;
+
+        const result = await app.db('categories')
+            .count('id')
+            .first();
+        const count = parseInt(result.count);
+
         try {
-            const categories = await app.db('categories');
-            response.json(withPath(categories));
+            const categories = await app.db('categories')
+                .limit(limit).offset(page * limit - limit);
+            const categoriesWithPath = withPath(categories);
+            response.json({ data: categoriesWithPath, count, limit });
         } catch(error) {
             response.status(500).send(error);
         }
@@ -49,7 +59,11 @@ module.exports = app => {
     };
 
     const store = async (request, response) => {
-        const category = { ...request.body };
+        const category = {
+            id: request.body.id,
+            name: request.body.name,
+            parentId: request.body.parentId,
+        };
 
         try {
             existsOrError(category.name, 'Name not entered');
@@ -66,7 +80,11 @@ module.exports = app => {
     };
 
     const update = async (request, response) => {
-        const category = { ...request.body };
+        const category = {
+            id: request.body.id,
+            name: request.body.name,
+            parentId: request.body.parentId,
+        };
         category.id = request.params.id;
 
         try {
