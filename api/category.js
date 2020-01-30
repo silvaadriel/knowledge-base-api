@@ -31,17 +31,25 @@ module.exports = app => {
     const index = async (request, response) => {
         const page = request.query.page || 1;
         const limit = request.query.limit || 10;
+        const all = request.query.all || false;
 
-        const result = await app.db('categories')
-            .count('id')
-            .first();
-        const count = parseInt(result.count);
+        try { 
+            if (all) {
+                const categories = await app.db('categories')
+                const categoriesWithPath = withPath(categories);
+                response.json(categoriesWithPath);
+            } else {
+                const result = await app.db('categories')
+                    .count('id')
+                    .first();
+                const count = parseInt(result.count);
 
-        try {
-            const categories = await app.db('categories')
-                .limit(limit).offset(page * limit - limit);
-            const categoriesWithPath = withPath(categories);
-            response.json({ data: categoriesWithPath, count, limit });
+                const categories = await app.db('categories')
+                    .limit(limit).offset(page * limit - limit);
+
+                const categoriesWithPath = withPath(categories);
+                response.json({ data: categoriesWithPath, count, limit });
+            }
         } catch(error) {
             response.status(500).send(error);
         }
