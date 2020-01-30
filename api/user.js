@@ -19,19 +19,27 @@ module.exports = app => {
     const index = async (request, response) => {
         const page = request.query.page || 1;
         const limit = request.query.limit || 10;
-
-        const result = await app.db('users')
-            .count('id')
-            .whereNull('deletedAt')
-            .first();
-        const count = parseInt(result.count);
+        const all = request.query.all || false;
 
         try {
-            const users = await app.db('users')
-                .select('id', 'name', 'email', 'admin')
-                .limit(limit).offset(page * limit - limit)
-                .whereNull('deletedAt');
-            response.json({ data: users, count, limit });
+            if (all) {
+                const users = await app.db('users')
+                    .select('id', 'name', 'email', 'admin')
+                    .whereNull('deletedAt');
+                response.json(users);
+            } else {
+                const result = await app.db('users')
+                    .count('id')
+                    .whereNull('deletedAt')
+                    .first();
+                const count = parseInt(result.count);
+
+                const users = await app.db('users')
+                    .select('id', 'name', 'email', 'admin')
+                    .limit(limit).offset(page * limit - limit)
+                    .whereNull('deletedAt');
+                response.json({ data: users, count, limit });
+            }
         } catch(error) {
             response.status(500).send(error);
         }
